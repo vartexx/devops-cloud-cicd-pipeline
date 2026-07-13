@@ -37,6 +37,9 @@ jobs:
     needs: integrate-and-test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
     steps:
     - name: Checkout Source Code
@@ -46,7 +49,7 @@ jobs:
       uses: docker/setup-buildx-action@v3
 
     - name: Log in to Docker Hub
-      if: secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != ''
+      if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -54,7 +57,7 @@ jobs:
 
     # Step 4a: Local compile check only if secrets are missing (skips push)
     - name: Build and Package Image (Verification Only)
-      if: secrets.DOCKERHUB_USERNAME == '' || secrets.DOCKERHUB_TOKEN == ''
+      if: env.DOCKERHUB_USERNAME == '' || env.DOCKERHUB_TOKEN == ''
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -68,7 +71,7 @@ jobs:
 
     # Step 4b: Complete build and push if secrets are configured
     - name: Build and Push Image (Production Release)
-      if: secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != ''
+      if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -85,13 +88,16 @@ jobs:
     needs: build-and-package
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     steps:
     - name: Checkout Source Code
       uses: actions/checkout@v4
 
     - name: Configure AWS Credentials
-      if: secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != ''
+      if: env.AWS_ACCESS_KEY_ID != '' && env.AWS_SECRET_ACCESS_KEY != ''
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -99,12 +105,12 @@ jobs:
         aws-region: us-east-1
 
     - name: Update Kubeconfig for EKS
-      if: secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != ''
+      if: env.AWS_ACCESS_KEY_ID != '' && env.AWS_SECRET_ACCESS_KEY != ''
       run: |
         aws eks update-kubeconfig --region us-east-1 --name devops-eks-cluster
 
     - name: Deploy Kubernetes Manifests
-      if: secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != ''
+      if: env.AWS_ACCESS_KEY_ID != '' && env.AWS_SECRET_ACCESS_KEY != ''
       run: |
         kubectl apply -f k8s/deployment.yaml
         kubectl apply -f k8s/service.yaml
