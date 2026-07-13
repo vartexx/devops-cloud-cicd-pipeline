@@ -52,12 +52,28 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build and Package Image
+    # Step 4a: Local compile check only if secrets are missing (skips push)
+    - name: Build and Package Image (Verification Only)
+      if: ${{ secrets.DOCKERHUB_USERNAME == '' || secrets.DOCKERHUB_TOKEN == '' }}
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./Dockerfile
-        push: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        push: false
+        tags: |
+          harsh/devops-dashboard:latest
+          harsh/devops-dashboard:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    # Step 4b: Complete build and push if secrets are configured
+    - name: Build and Push Image (Production Release)
+      if:  ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
         tags: |
           harsh/devops-dashboard:latest
           harsh/devops-dashboard:${{ github.sha }}
