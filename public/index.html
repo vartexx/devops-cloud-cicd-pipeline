@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevOps CI/CD Pipeline Dashboard</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Local Chart.js for offline-first resilience -->
+  <script src="chart.js"></script>
+  <!-- Custom Styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header animate-fade-in">
+      <div class="header-title">
+        <i class="fa-solid fa-circle-nodes logo-icon"></i>
+        <div>
+          <h1>DevOps CI/CD Pipeline</h1>
+          <p class="subtitle">Cloud Deployment Monitoring & Control Center</p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> AWS Cluster Connected</span>
+        <span class="badge badge-info"><i class="fa-solid fa-server"></i> K8s: Production v1.30</span>
+      </div>
+    </header>
+
+    <!-- Top Summary Widgets -->
+    <section class="stats-grid animate-slide-up">
+      <div class="stat-card card-purple">
+        <div class="stat-header">
+          <span>Deployment Success Rate</span>
+          <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <div class="stat-value" id="success-rate-val">--%</div>
+        <div class="stat-progress-bar">
+          <div class="stat-progress-fill" id="success-rate-fill" style="width: 0%"></div>
+        </div>
+        <p class="stat-desc">Target threshold: 90% minimum</p>
+      </div>
+
+      <div class="stat-card card-blue">
+        <div class="stat-header">
+          <span>Active Containers</span>
+          <i class="fa-solid fa-cubes"></i>
+        </div>
+        <div class="stat-value" id="replicas-val">--</div>
+        <div class="stat-status">
+          <span class="indicator indicator-online"></span>
+          <span class="status-text">Rolling Update Available</span>
+        </div>
+        <p class="stat-desc">K8s Deployment ReplicaSet</p>
+      </div>
+
+      <div class="stat-card card-green">
+        <div class="stat-header">
+          <span>Network Outgoing</span>
+          <i class="fa-solid fa-arrow-trend-up"></i>
+        </div>
+        <div class="stat-value" id="network-val">-- Mbps</div>
+        <p class="stat-desc" id="uptime-val">Uptime: --s</p>
+      </div>
+
+      <div class="stat-card card-orange">
+        <div class="stat-header">
+          <span>Total Pipeline Runs</span>
+          <i class="fa-solid fa-rotate"></i>
+        </div>
+        <div class="stat-value" id="total-builds-val">--</div>
+        <p class="stat-desc">Triggered via GitHub Webhooks</p>
+      </div>
+    </section>
+
+    <!-- Main Workspace Grid -->
+    <main class="workspace-grid">
+      <!-- Left Panel: Actions & Resource Charts -->
+      <section class="panel panel-left animate-slide-up">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-rocket"></i> Actions & Controls</h2>
+        </div>
+        <div class="panel-body">
+          <div class="trigger-box">
+            <p>Deploy code updates directly to the AWS Cluster by simulating a git push event.</p>
+            <div class="form-group">
+              <label for="branch-select">Target Branch</label>
+              <select id="branch-select" class="custom-select">
+                <option value="main">main (Production)</option>
+                <option value="release/v1.0">release/v1.0 (Staging)</option>
+                <option value="feature/auth">feature/auth (Development)</option>
+              </select>
+            </div>
+            <button id="btn-trigger" class="btn btn-primary btn-block">
+              <i class="fa-solid fa-play"></i> Trigger CI/CD Pipeline
+            </button>
+          </div>
+
+          <div class="charts-box">
+            <h3>Live Resource Monitor</h3>
+            <div class="chart-container">
+              <canvas id="resourceChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Panel: Real-time Terminal Logs -->
+      <section class="panel panel-right animate-slide-up">
+        <div class="panel-header">
+          <h2><i class="fa-solid fa-terminal"></i> Pipeline Console Logs</h2>
+          <span class="console-indicator" id="console-status"><span class="pulse-dot"></span> Listening</span>
+        </div>
+        <div class="panel-body console-body" id="console-logs">
+          <div class="console-line system-msg">[SYSTEM] Ready to capture build logs...</div>
+          <div class="console-line system-msg">[SYSTEM] Click "Trigger CI/CD Pipeline" above to run build, lint, test, dockerize, and K8s rolling deployment stages.</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Panel: Historical Pipeline Runs -->
+    <section class="panel panel-bottom animate-slide-up">
+      <div class="panel-header">
+        <h2><i class="fa-solid fa-history"></i> Deployment Pipeline History</h2>
+      </div>
+      <div class="panel-body">
+        <div class="table-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Build ID</th>
+                <th>Branch</th>
+                <th>Commit</th>
+                <th>Status</th>
+                <th>Duration</th>
+                <th>Timestamp</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <tr>
+                <td colspan="7" class="text-center text-muted">Fetching deployment runs...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>DevOps CI/CD Pipeline Dashboard &bull; Major Project Submission &bull; Harsha</p>
+    </footer>
+  </div>
+  <!-- Load Main Application Logic -->
+  <script src="app.js?v=3"></script>
+</body>
+</html>

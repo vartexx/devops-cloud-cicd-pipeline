@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Temporary files and logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Screenshots and generated PDFs
+screenshot1.png
+screenshot2.png
+devops_dashboard_container/
+DevOps_Pipeline_Report.md
+DevOps_Pipeline_Report.pdf
+AWS_Deployment_Guide.md
+
+# local configurations
+.env
+/scratch/
+/tmp/
